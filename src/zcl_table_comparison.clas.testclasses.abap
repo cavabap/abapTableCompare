@@ -11,13 +11,13 @@ class ltc_compare_t001 definition create public FOR TESTING RISK LEVEL HARMLESS 
     METHODS one_item_updated FOR TESTING RAISING cx_static_check.
     METHODS one_item_deleted FOR TESTING RAISING cx_static_check.
 
-    TYPES: company_code_table TYPE STANDARD TABLE OF t001 with EMPTY KEY.
+    TYPES: variant_variable_table TYPE STANDARD TABLE OF tvarvc with EMPTY KEY.
     DATA:
-      company_codes_old  TYPE company_code_table,
-      company_codes_new  TYPE company_code_table,
-      company_codes_inserted  TYPE company_code_table,
-      company_codes_updated  TYPE company_code_table,
-      company_codes_deleted  TYPE company_code_table,
+      variant_variables_old  TYPE variant_variable_table,
+      variant_variables_new  TYPE variant_variable_table,
+      variant_variables_inserted  TYPE variant_variable_table,
+      variant_variables_updated  TYPE variant_variable_table,
+      variant_variables_deleted  TYPE variant_variable_table,
       cut TYPE REF TO zif_table_comparison.
 endclass.
 
@@ -27,31 +27,31 @@ class ltc_compare_t001 implementation.
 
 *   Create 4 sample entries
     DO 4 TIMES.
-      DATA(company) = VALUE t001( bukrs = 1000 * sy-index + sy-index rcomp = abap_false ).
-      APPEND company TO company_codes_new.
-      APPEND company TO company_codes_old.
+      DATA(variant_variable) = VALUE tvarvc( name = 1000 * sy-index + sy-index opti = 'I' ).
+      APPEND variant_variable TO variant_variables_new.
+      APPEND variant_variable TO variant_variables_old.
     ENDDO.
 
 *   Sorting is (currently) crucial for comparison!!!
-    SORT company_codes_new BY bukrs.
-    SORT company_codes_old BY bukrs.
+    SORT variant_variables_new BY name type numb.
+    SORT variant_variables_old BY name type numb.
     cut = zcl_table_comparison_factory=>create_table_comparision( ).
   ENDMETHOD.
 
   METHOD one_item_inserted.
 
 *   Delete first entry from old itab => first entry of new itab
-*   should be inserted (company = '1001' -> CHIND = 'I').
-    DELETE company_codes_old INDEX 1.
+*   should be inserted (name = '1001' -> CHIND = 'I').
+    DELETE variant_variables_old INDEX 1.
 
     cut->compare(
       EXPORTING
-        it_itab_new         = company_codes_new
-        it_itab_old         = company_codes_old
+        it_itab_new         = variant_variables_new
+        it_itab_old         = variant_variables_old
       IMPORTING
-        et_insert           = company_codes_inserted
-        et_update           = company_codes_updated
-        et_delete           = company_codes_deleted
+        et_insert           = variant_variables_inserted
+        et_update           = variant_variables_updated
+        et_delete           = variant_variables_deleted
       EXCEPTIONS
         error               = 1
         function_call_error = 2
@@ -59,26 +59,26 @@ class ltc_compare_t001 implementation.
     ).
     ASSERT SY-SUBRC = 0.
 
-    cl_abap_unit_assert=>assert_initial( company_codes_updated ).
-    cl_abap_unit_assert=>assert_initial( company_codes_deleted ).
-    cl_abap_unit_assert=>assert_equals( act = company_codes_inserted exp = VALUE company_code_table( ( company_codes_new[ 1 ] ) ) ).
+    cl_abap_unit_assert=>assert_initial( variant_variables_updated ).
+    cl_abap_unit_assert=>assert_initial( variant_variables_deleted ).
+    cl_abap_unit_assert=>assert_equals( act = variant_variables_inserted exp = VALUE variant_variable_table( ( variant_variables_new[ 1 ] ) ) ).
 
   ENDMETHOD.
 
 
   METHOD one_item_updated.
 *   Modify second entry of new itab =>
-*   should be updated (customer = '2' -> CHIND = 'U')
-    company_codes_new[ 2 ]-rcomp = abap_true.
+*   should be updated (sign = 'E' -> CHIND = 'U')
+    variant_variables_new[ 2 ]-sign = 'E'.
 
     cut->compare(
       EXPORTING
-        it_itab_new         = company_codes_new
-        it_itab_old         = company_codes_old
+        it_itab_new         = variant_variables_new
+        it_itab_old         = variant_variables_old
       IMPORTING
-        et_insert           = company_codes_inserted
-        et_update           = company_codes_updated
-        et_delete           = company_codes_deleted
+        et_insert           = variant_variables_inserted
+        et_update           = variant_variables_updated
+        et_delete           = variant_variables_deleted
       EXCEPTIONS
         error               = 1
         function_call_error = 2
@@ -86,9 +86,9 @@ class ltc_compare_t001 implementation.
     ).
     ASSERT SY-SUBRC = 0.
 
-    cl_abap_unit_assert=>assert_initial( company_codes_inserted ).
-    cl_abap_unit_assert=>assert_initial( company_codes_deleted ).
-    cl_abap_unit_assert=>assert_equals( act = company_codes_updated exp = VALUE company_code_table( ( company_codes_new[ 2 ] ) ) ).
+    cl_abap_unit_assert=>assert_initial( variant_variables_inserted ).
+    cl_abap_unit_assert=>assert_initial( variant_variables_deleted ).
+    cl_abap_unit_assert=>assert_equals( act = variant_variables_updated exp = VALUE variant_variable_table( ( variant_variables_new[ 2 ] ) ) ).
 
   ENDMETHOD.
 
@@ -96,17 +96,17 @@ class ltc_compare_t001 implementation.
 
   METHOD one_item_deleted.
 **   Delete third entry from new itab =>
-**   should be deleted (customer = '3' -> CHIND = 'D').
-      DELETE company_codes_new INDEX 3.
+**   should be deleted (name = '3003' -> CHIND = 'D').
+    DELETE variant_variables_new INDEX 3.
 
     cut->compare(
       EXPORTING
-        it_itab_new         = company_codes_new
-        it_itab_old         = company_codes_old
+        it_itab_new         = variant_variables_new
+        it_itab_old         = variant_variables_old
       IMPORTING
-        et_insert           = company_codes_inserted
-        et_update           = company_codes_updated
-        et_delete           = company_codes_deleted
+        et_insert           = variant_variables_inserted
+        et_update           = variant_variables_updated
+        et_delete           = variant_variables_deleted
       EXCEPTIONS
         error               = 1
         function_call_error = 2
@@ -114,9 +114,9 @@ class ltc_compare_t001 implementation.
     ).
     ASSERT SY-SUBRC = 0.
 
-    cl_abap_unit_assert=>assert_initial( company_codes_inserted ).
-    cl_abap_unit_assert=>assert_initial( company_codes_updated ).
-    cl_abap_unit_assert=>assert_equals( act = company_codes_deleted exp = VALUE company_code_table( ( company_codes_old[ 3 ] ) ) ).
+    cl_abap_unit_assert=>assert_initial( variant_variables_inserted ).
+    cl_abap_unit_assert=>assert_initial( variant_variables_updated ).
+    cl_abap_unit_assert=>assert_equals( act = variant_variables_deleted exp = VALUE variant_variable_table( ( variant_variables_old[ 3 ] ) ) ).
 
   ENDMETHOD.
 

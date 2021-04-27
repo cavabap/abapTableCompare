@@ -5,9 +5,6 @@ CLASS zcl_table_comparison DEFINITION
 
   PUBLIC SECTION.
     INTERFACES: ZIF_TABLE_COMPARISON.
-      " error when calling
-
-
     "!     test method for COMPARE method
     "! The static method TEST generates simplified PBO data and PAI data for
     "! demonstrating the functionality of method COMPARE. PBO data and PAI
