@@ -1,71 +1,53 @@
-CLASS zcl_sdn_itab_comparison DEFINITION
+CLASS zcl_table_comparison DEFINITION
   PUBLIC
-  CREATE PRIVATE .
+  CREATE PRIVATE
+  GLOBAL FRIENDS zcl_table_comparison_factory.
 
-PUBLIC SECTION.
-"!     compare two identical itabs (old vs. new; PBO vs. PAI)
-"! CHANGEDOCUMENT_PREPARE_TABLES
-"!
-"!  The static method COMPARE contains two IMPORTING parameters
-"!  corresponding to the internal tables storing the PAI data (new) and
-"!  the PBO data (old), respectively. The results of the comparison are
-"!  exported as internal tables having the same line type
-"!  as the PBO/PAI data.
-        CLASS-METHODS
-      compare
-        IMPORTING
-          VALUE(it_itab_new)  TYPE table " itab with current data (PAI)
-          VALUE(it_itab_old)  TYPE table " itab with old data     (PBO)
-        EXPORTING
-          et_insert           TYPE table " itab with new data
-          et_update           TYPE table " itab with changed data
-          et_delete           TYPE table " itab with deleted data
-
-        EXCEPTIONS
-          error                 " itabs have different line types
-          function_call_error.  " error when calling
+  PUBLIC SECTION.
+    INTERFACES: ZIF_TABLE_COMPARISON.
+      " error when calling
 
 
-"!     test method for COMPARE method
-"! The static method TEST generates simplified PBO data and PAI data for
-"! demonstrating the functionality of method COMPARE. PBO data and PAI
-"! data as well as the results are displayed as ALV lists.
-"! The interface of method TEST contains three IMPORTING parameters
-"! (flags) for simulating PAI data that contain new, modified or deleted
-"! entries and any combination thereof.
-        CLASS-METHODS
+    "!     test method for COMPARE method
+    "! The static method TEST generates simplified PBO data and PAI data for
+    "! demonstrating the functionality of method COMPARE. PBO data and PAI
+    "! data as well as the results are displayed as ALV lists.
+    "! The interface of method TEST contains three IMPORTING parameters
+    "! (flags) for simulating PAI data that contain new, modified or deleted
+    "! entries and any combination thereof.
+    CLASS-METHODS
       interactive_test
         IMPORTING
-          id_insert  TYPE abap_bool  OPTIONAL
-          id_update  TYPE abap_bool  OPTIONAL
-          id_delete  TYPE abap_bool  OPTIONAL.
-PROTECTED SECTION.
-PRIVATE SECTION.
+          id_insert TYPE abap_bool  OPTIONAL
+          id_update TYPE abap_bool  OPTIONAL
+          id_delete TYPE abap_bool  OPTIONAL.
+  PROTECTED SECTION.
+  PRIVATE SECTION.
 ENDCLASS.
 
 
 
-CLASS zcl_sdn_itab_comparison IMPLEMENTATION.
+CLASS zcl_table_comparison IMPLEMENTATION.
 
 
-  METHOD compare.
+  METHOD zif_table_comparison~compare.
 
 * define local data
     DATA:
-      ld_struc_old  TYPE string,
-      ld_struc_new  TYPE string,
-      ld_tabname    TYPE tabname,
-      ldo_new       TYPE REF TO data,
-      ldo_old       TYPE REF TO data,
+      ld_struc_old TYPE string,
+      ld_struc_new TYPE string,
+      ld_tabname   TYPE tabname,
+      ldo_new      TYPE REF TO data,
+      ldo_old      TYPE REF TO data,
 *
-      ldo_struc     TYPE REF TO data,
-      ldo_di_struc  TYPE REF TO data,
-      ldo_di_new    TYPE REF TO data,
-      ldo_di_old    TYPE REF TO data,
+      ldo_struc    TYPE REF TO data,
+      ldo_di_struc TYPE REF TO data,
+      ldo_di_new   TYPE REF TO data,
+      ldo_di_old   TYPE REF TO data,
 *
-      ldo_insert    TYPE REF TO data,
-      ldo_update    TYPE REF TO data,
-      ldo_delete    TYPE REF TO data.
+      ldo_insert   TYPE REF TO data,
+      ldo_update   TYPE REF TO data,
+      ldo_delete   TYPE REF TO data.
 
 
     TYPES: BEGIN OF ty_s_di.
@@ -83,24 +65,24 @@ CLASS zcl_sdn_itab_comparison IMPLEMENTATION.
 
 
     DATA:
-      lt_components      TYPE cl_abap_structdescr=>component_table,
-      lt_components_di   TYPE cl_abap_structdescr=>component_table,
-      ls_component       LIKE LINE OF lt_components,
-      lo_tab_new         TYPE REF TO cl_abap_tabledescr,
-      lo_tab_old         TYPE REF TO cl_abap_tabledescr,
-      lo_tab_di          TYPE REF TO cl_abap_tabledescr,
-      lo_strucdescr      TYPE REF TO cl_abap_structdescr,
-      lo_typedescr       TYPE REF TO cl_abap_typedescr,
-      lt_tabkey          TYPE abap_keydescr_tab.
+      lt_components    TYPE cl_abap_structdescr=>component_table,
+      lt_components_di TYPE cl_abap_structdescr=>component_table,
+      ls_component     LIKE LINE OF lt_components,
+      lo_tab_new       TYPE REF TO cl_abap_tabledescr,
+      lo_tab_old       TYPE REF TO cl_abap_tabledescr,
+      lo_tab_di        TYPE REF TO cl_abap_tabledescr,
+      lo_strucdescr    TYPE REF TO cl_abap_structdescr,
+      lo_typedescr     TYPE REF TO cl_abap_typedescr,
+      lt_tabkey        TYPE abap_keydescr_tab.
 
     FIELD-SYMBOLS:
-      <ld_chind>     TYPE bu_chind,
+      <ld_chind>  TYPE bu_chind,
 *
-      <ls_struc>     TYPE any,
-      <ls_di>         TYPE any,
+      <ls_struc>  TYPE any,
+      <ls_di>     TYPE any,
 *
-      <lt_old_di>     TYPE table,
-      <lt_new_di>    TYPE table.
+      <lt_old_di> TYPE table,
+      <lt_new_di> TYPE table.
 
 
 
@@ -175,17 +157,17 @@ CLASS zcl_sdn_itab_comparison IMPLEMENTATION.
 * - ' ' = has a corresponding entry in table_new with CHIND = 'U'
     CALL FUNCTION 'CHANGEDOCUMENT_PREPARE_TABLES'
       EXPORTING
-        check_indicator              = abap_false
-        tablename                    = ld_tabname
+        check_indicator        = abap_false
+        tablename              = ld_tabname
 *   IMPORTING
-*     RESULT                       =
+*       RESULT                 =
       TABLES
-        table_new                    = <lt_new_di>
-        table_old                    = <lt_old_di>
+        table_new              = <lt_new_di>
+        table_old              = <lt_old_di>
       EXCEPTIONS
-        nametab_error                = 1
-        wrong_structure_length       = 2
-        OTHERS                       = 3.
+        nametab_error          = 1
+        wrong_structure_length = 2
+        OTHERS                 = 3.
     IF sy-subrc <> 0.
       MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
               WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4
@@ -240,14 +222,14 @@ CLASS zcl_sdn_itab_comparison IMPLEMENTATION.
 
 *   define local data
     DATA:
-      ld_gridtitle       TYPE lvc_title,
-      ls_knb1            TYPE knb1,
-      lt_knb1_old        TYPE STANDARD TABLE OF knb1,
-      lt_knb1_new        TYPE STANDARD TABLE OF knb1,
+      ld_gridtitle TYPE lvc_title,
+      ls_knb1      TYPE knb1,
+      lt_knb1_old  TYPE STANDARD TABLE OF knb1,
+      lt_knb1_new  TYPE STANDARD TABLE OF knb1,
 *
-      lt_knb1_ins        TYPE STANDARD TABLE OF knb1,
-      lt_knb1_upd        TYPE STANDARD TABLE OF knb1,
-      lt_knb1_del        TYPE STANDARD TABLE OF knb1.
+      lt_knb1_ins  TYPE STANDARD TABLE OF knb1,
+      lt_knb1_upd  TYPE STANDARD TABLE OF knb1,
+      lt_knb1_del  TYPE STANDARD TABLE OF knb1.
 
 
 
@@ -318,14 +300,14 @@ CLASS zcl_sdn_itab_comparison IMPLEMENTATION.
 
 
 *   Compare old vs. new itab
-    CALL METHOD compare
+    zcl_table_comparison_factory=>create_table_comparision( )->compare(
       EXPORTING
         it_itab_new = lt_knb1_new
         it_itab_old = lt_knb1_old
       IMPORTING
         et_insert   = lt_knb1_ins
         et_update   = lt_knb1_upd
-        et_delete   = lt_knb1_del.
+        et_delete   = lt_knb1_del ).
 
 
 

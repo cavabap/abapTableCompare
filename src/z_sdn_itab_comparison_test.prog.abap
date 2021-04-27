@@ -22,7 +22,7 @@ START-OF-SELECTION.
 *The interface of method TEST contains three IMPORTING parameters
 *(flags) for simulating PAI data that contain new, modified or deleted
 *entries and any combination thereof.
-  zcl_sdn_itab_comparison=>interactive_test( id_insert = p_ins
+  zcl_table_comparison=>interactive_test( id_insert = p_ins
                                                id_update = p_upd
                                                id_delete = p_del ).
 
