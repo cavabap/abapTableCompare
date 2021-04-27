@@ -10,6 +10,7 @@ class ltc_compare_t001 definition create public FOR TESTING RISK LEVEL HARMLESS 
     METHODS one_item_inserted FOR TESTING RAISING cx_static_check.
     METHODS one_item_updated FOR TESTING RAISING cx_static_check.
     METHODS one_item_deleted FOR TESTING RAISING cx_static_check.
+    METHODS two_items_inserted_one_changed FOR TESTING RAISING cx_static_check.
 
     TYPES: variant_variable_table TYPE STANDARD TABLE OF tvarvc with EMPTY KEY.
     DATA:
@@ -56,6 +57,29 @@ class ltc_compare_t001 implementation.
     cl_abap_unit_assert=>assert_initial( variant_variables_updated ).
     cl_abap_unit_assert=>assert_initial( variant_variables_deleted ).
     cl_abap_unit_assert=>assert_equals( act = variant_variables_inserted exp = VALUE variant_variable_table( ( variant_variables_new[ 1 ] ) ) ).
+
+  ENDMETHOD.
+
+  METHOD two_items_inserted_one_changed.
+
+*   Delete first entry from old itab => first entry of new itab
+*   should be inserted (name = '1001' -> CHIND = 'I').
+    DELETE variant_variables_old INDEX 3.
+    DELETE variant_variables_old INDEX 1.
+    variant_variables_new[ 2 ]-low = 'Hello World'.
+
+    cut->compare(
+      EXPORTING
+        it_itab_new         = variant_variables_new
+        it_itab_old         = variant_variables_old
+      IMPORTING
+        et_insert           = variant_variables_inserted
+        et_update           = variant_variables_updated
+        et_delete           = variant_variables_deleted ).
+
+    cl_abap_unit_assert=>assert_equals( act = variant_variables_updated exp = VALUE variant_variable_table( ( variant_variables_new[ 2 ] ) ) ).
+    cl_abap_unit_assert=>assert_initial( variant_variables_deleted ).
+    cl_abap_unit_assert=>assert_equals( act = variant_variables_inserted exp = VALUE variant_variable_table( ( variant_variables_new[ 1 ] ) ( variant_variables_new[ 3 ] ) ) ).
 
   ENDMETHOD.
 
