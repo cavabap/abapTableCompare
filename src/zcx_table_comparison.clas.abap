@@ -1,0 +1,16 @@
+CLASS zcx_table_comparison DEFINITION
+  PUBLIC
+  INHERITING FROM cx_static_check
+  CREATE PRIVATE
+  GLOBAL FRIENDS zcl_table_comparison .
+
+  PUBLIC SECTION.
+  PROTECTED SECTION.
+  PRIVATE SECTION.
+ENDCLASS.
+
+
+
+CLASS zcx_table_comparison IMPLEMENTATION.
+
+ENDCLASS.

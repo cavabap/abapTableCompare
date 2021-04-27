@@ -51,13 +51,7 @@ class ltc_compare_t001 implementation.
       IMPORTING
         et_insert           = variant_variables_inserted
         et_update           = variant_variables_updated
-        et_delete           = variant_variables_deleted
-      EXCEPTIONS
-        error               = 1
-        function_call_error = 2
-        others              = 3
-    ).
-    ASSERT SY-SUBRC = 0.
+        et_delete           = variant_variables_deleted ).
 
     cl_abap_unit_assert=>assert_initial( variant_variables_updated ).
     cl_abap_unit_assert=>assert_initial( variant_variables_deleted ).
@@ -78,13 +72,7 @@ class ltc_compare_t001 implementation.
       IMPORTING
         et_insert           = variant_variables_inserted
         et_update           = variant_variables_updated
-        et_delete           = variant_variables_deleted
-      EXCEPTIONS
-        error               = 1
-        function_call_error = 2
-        others              = 3
-    ).
-    ASSERT SY-SUBRC = 0.
+        et_delete           = variant_variables_deleted ).
 
     cl_abap_unit_assert=>assert_initial( variant_variables_inserted ).
     cl_abap_unit_assert=>assert_initial( variant_variables_deleted ).
@@ -106,13 +94,7 @@ class ltc_compare_t001 implementation.
       IMPORTING
         et_insert           = variant_variables_inserted
         et_update           = variant_variables_updated
-        et_delete           = variant_variables_deleted
-      EXCEPTIONS
-        error               = 1
-        function_call_error = 2
-        others              = 3
-    ).
-    ASSERT SY-SUBRC = 0.
+        et_delete           = variant_variables_deleted ).
 
     cl_abap_unit_assert=>assert_initial( variant_variables_inserted ).
     cl_abap_unit_assert=>assert_initial( variant_variables_updated ).

@@ -95,7 +95,9 @@ CLASS zcl_table_comparison IMPLEMENTATION.
     ld_struc_old = lo_strucdescr->get_relative_name( ).
 
     IF ( ld_struc_old NE ld_struc_new ).
-      RAISE error.  " itab's have different line types
+*      RAISE error.  " itab's have different line types
+      ##TODO "message text export
+      RAISE EXCEPTION TYPE zcx_table_comparison.
     ENDIF.
 
 
@@ -166,9 +168,11 @@ CLASS zcl_table_comparison IMPLEMENTATION.
         wrong_structure_length = 2
         OTHERS                 = 3.
     IF sy-subrc <> 0.
-      MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
-              WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4
-      RAISING function_call_error.
+*      MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+*              WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4
+*      RAISING function_call_error.
+      ##TODO "message text export - however these errors won't occur anymore, if I move away from 'CHANGEDOCUMENT_PREPARE_TABLES'
+      RAISE EXCEPTION TYPE zcx_table_comparison.
     ENDIF.
 
 

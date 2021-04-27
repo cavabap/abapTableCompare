@@ -17,9 +17,6 @@ interface ZIF_TABLE_COMPARISON
         et_insert          TYPE table " itab with new data
         et_update          TYPE table " itab with changed data
         et_delete          TYPE table " itab with deleted data
-
-      EXCEPTIONS
-        error                 " itabs have different line types
-        function_call_error.
+      RAISING zcx_table_comparison.
 
 endinterface.
