@@ -1,130 +1,152 @@
-*"* use this source file for your ABAP unit test classes
 
-class ltc_compare_t001 definition create public FOR TESTING RISK LEVEL HARMLESS DURATION SHORT.
+CLASS ltc_function_tests DEFINITION FINAL FOR TESTING
+  DURATION SHORT
+  RISK LEVEL HARMLESS.
 
-  public section.
-  protected section.
-  private section.
+  PRIVATE SECTION.
 
-    METHODS setup.
-    METHODS one_item_inserted FOR TESTING RAISING cx_static_check.
-    METHODS one_item_updated FOR TESTING RAISING cx_static_check.
-    METHODS one_item_deleted FOR TESTING RAISING cx_static_check.
-    METHODS two_items_inserted_one_changed FOR TESTING RAISING cx_static_check.
+    TYPES t_itab TYPE STANDARD TABLE OF scarr WITH KEY carrid.
 
-    TYPES: variant_variable_table TYPE STANDARD TABLE OF tvarvc with EMPTY KEY.
-    DATA:
-      variant_variables_old  TYPE variant_variable_table,
-      variant_variables_new  TYPE variant_variable_table,
-      variant_variables_inserted  TYPE variant_variable_table,
-      variant_variables_updated  TYPE variant_variable_table,
-      variant_variables_deleted  TYPE variant_variable_table,
-      cut TYPE REF TO zif_table_comparison.
-endclass.
+    DATA scarr_old TYPE t_itab.
+    DATA scarr_new TYPE t_itab.
 
-class ltc_compare_t001 implementation.
+    DATA: inserts TYPE t_itab,
+          updates TYPE t_itab,
+          deletes TYPE t_itab.
 
-  METHOD setup.
+    METHODS no_change FOR TESTING RAISING cx_static_check.
+    METHODS delete_row FOR TESTING RAISING cx_static_check.
+    METHODS add_row FOR TESTING RAISING cx_static_check.
+    METHODS change_row FOR TESTING RAISING cx_static_check.
+    METHODS unsorted_fails FOR TESTING RAISING cx_static_check.
+    METHODS multiple_changes FOR TESTING RAISING cx_static_check.
 
-*   Create 4 sample entries
-    DO 4 TIMES.
-      DATA(variant_variable) = VALUE tvarvc( name = 1000 * sy-index + sy-index opti = 'I' ).
-      APPEND variant_variable TO variant_variables_new.
-      APPEND variant_variable TO variant_variables_old.
-    ENDDO.
+    METHODS deletes_should_be IMPORTING i_scarr TYPE t_itab OPTIONAL.
+    METHODS changes_should_be IMPORTING i_scarr TYPE t_itab OPTIONAL.
+    METHODS inserts_should_be IMPORTING i_scarr TYPE t_itab OPTIONAL.
 
-*   Sorting is (currently) crucial for comparison!!!
-    SORT variant_variables_new BY name type numb.
-    SORT variant_variables_old BY name type numb.
-    cut = zcl_table_comparison_factory=>create_table_comparision( ).
-  ENDMETHOD.
+    METHODS compare_tables RAISING zcx_table_comparison.
 
-  METHOD one_item_inserted.
+ENDCLASS.
 
-*   Delete first entry from old itab => first entry of new itab
-*   should be inserted (name = '1001' -> CHIND = 'I').
-    DELETE variant_variables_old INDEX 1.
 
-    cut->compare(
-      EXPORTING
-        it_itab_new         = variant_variables_new
-        it_itab_old         = variant_variables_old
-      IMPORTING
-        et_insert           = variant_variables_inserted
-        et_update           = variant_variables_updated
-        et_delete           = variant_variables_deleted ).
+CLASS ltc_function_tests IMPLEMENTATION.
 
-    cl_abap_unit_assert=>assert_initial( variant_variables_updated ).
-    cl_abap_unit_assert=>assert_initial( variant_variables_deleted ).
-    cl_abap_unit_assert=>assert_equals( act = variant_variables_inserted exp = VALUE variant_variable_table( ( variant_variables_new[ 1 ] ) ) ).
+  METHOD no_change.
+
+    scarr_old = VALUE #( ( |   AA| ) ).
+    scarr_new = VALUE #( ( |   AA| ) ).
+
+    compare_tables( ).
+
+    inserts_should_be( ).
+    changes_should_be( ).
+    deletes_should_be( ).
 
   ENDMETHOD.
 
-  METHOD two_items_inserted_one_changed.
+  METHOD add_row.
 
-*   Delete first entry from old itab => first entry of new itab
-*   should be inserted (name = '1001' -> CHIND = 'I').
-    DELETE variant_variables_old INDEX 3.
-    DELETE variant_variables_old INDEX 1.
-    variant_variables_new[ 2 ]-low = 'Hello World'.
+    scarr_old = VALUE #( ( |   AA| ) ).
+    scarr_new = VALUE #( ( |   AA| ) ( |   BB| ) ).
 
-    cut->compare(
-      EXPORTING
-        it_itab_new         = variant_variables_new
-        it_itab_old         = variant_variables_old
-      IMPORTING
-        et_insert           = variant_variables_inserted
-        et_update           = variant_variables_updated
-        et_delete           = variant_variables_deleted ).
+    compare_tables( ).
 
-    cl_abap_unit_assert=>assert_equals( act = variant_variables_updated exp = VALUE variant_variable_table( ( variant_variables_new[ 2 ] ) ) ).
-    cl_abap_unit_assert=>assert_initial( variant_variables_deleted ).
-    cl_abap_unit_assert=>assert_equals( act = variant_variables_inserted exp = VALUE variant_variable_table( ( variant_variables_new[ 1 ] ) ( variant_variables_new[ 3 ] ) ) ).
+    inserts_should_be( VALUE #( ( |   BB| ) ) ).
+    changes_should_be( ).
+    deletes_should_be( ).
 
   ENDMETHOD.
 
+  METHOD change_row.
 
-  METHOD one_item_updated.
-*   Modify second entry of new itab =>
-*   should be updated (sign = 'E' -> CHIND = 'U')
-    variant_variables_new[ 2 ]-sign = 'E'.
+    scarr_old = VALUE #( ( carrid = 'AA' ) ).
+    scarr_new = VALUE #( ( carrid = 'AA' carrname = 'ABC' ) ).
 
-    cut->compare(
-      EXPORTING
-        it_itab_new         = variant_variables_new
-        it_itab_old         = variant_variables_old
-      IMPORTING
-        et_insert           = variant_variables_inserted
-        et_update           = variant_variables_updated
-        et_delete           = variant_variables_deleted ).
+    compare_tables( ).
 
-    cl_abap_unit_assert=>assert_initial( variant_variables_inserted ).
-    cl_abap_unit_assert=>assert_initial( variant_variables_deleted ).
-    cl_abap_unit_assert=>assert_equals( act = variant_variables_updated exp = VALUE variant_variable_table( ( variant_variables_new[ 2 ] ) ) ).
+    inserts_should_be( ).
+    changes_should_be( VALUE #( ( carrid = 'AA' carrname = 'ABC' ) ) ).
+    deletes_should_be( ).
+
+  ENDMETHOD.
+
+  METHOD delete_row.
+
+    scarr_old = VALUE #( ( |   AA| ) ).
+    scarr_new = VALUE #( ).
+
+    compare_tables( ).
+
+    inserts_should_be( ).
+    changes_should_be( ).
+    deletes_should_be( VALUE #( ( |   AA| ) ) ).
+
+  ENDMETHOD.
+
+  METHOD unsorted_fails.
+
+    scarr_old = VALUE #( ( |   BB| ) ( |   AA| ) ).
+
+    TRY.
+        compare_tables( ).
+        cl_abap_unit_assert=>fail( msg = 'Todo: Raise exception for unsorted tables'
+                                   level = if_aunit_constants=>tolerable ).
+      CATCH zcx_table_comparison ##NO_HANDLER.
+        "as expected.
+    ENDTRY.
 
   ENDMETHOD.
 
 
+  METHOD multiple_changes.
 
-  METHOD one_item_deleted.
-**   Delete third entry from new itab =>
-**   should be deleted (name = '3003' -> CHIND = 'D').
-    DELETE variant_variables_new INDEX 3.
+    scarr_old = VALUE #( ( carrid = `AA` ) ( carrid = `BB` ) ( carrid = `CC` ) ( carrid = `DD` )                   ( carrid = 'EE' carrname = 'Foo' )                   ).
+    scarr_new = VALUE #( ( carrid = `AA` )                   ( carrid = `CC` ) ( carrid = `DD` ) ( carrid = `EA` ) ( carrid = 'EE' carrname = 'Bar' ) ( carrid = `ZZ` ) ).
 
-    cut->compare(
-      EXPORTING
-        it_itab_new         = variant_variables_new
-        it_itab_old         = variant_variables_old
-      IMPORTING
-        et_insert           = variant_variables_inserted
-        et_update           = variant_variables_updated
-        et_delete           = variant_variables_deleted ).
+    compare_tables( ).
 
-    cl_abap_unit_assert=>assert_initial( variant_variables_inserted ).
-    cl_abap_unit_assert=>assert_initial( variant_variables_updated ).
-    cl_abap_unit_assert=>assert_equals( act = variant_variables_deleted exp = VALUE variant_variable_table( ( variant_variables_old[ 3 ] ) ) ).
+    inserts_should_be( VALUE #( ( carrid = `EA` ) ( carrid = `ZZ` ) ) ).
+    changes_should_be( VALUE #( ( carrid = `EE` carrname = `Bar` ) ) ).
+    deletes_should_be( VALUE #( ( carrid = `BB` ) ) ).
 
   ENDMETHOD.
 
 
-endclass.
+  METHOD compare_tables.
+
+    zcl_table_comparison_factory=>create_table_comparison(
+      )->compare(
+           EXPORTING
+             it_itab_new = scarr_new
+             it_itab_old = scarr_old
+           IMPORTING
+             et_insert   = inserts
+             et_update   = updates
+             et_delete   = deletes ).
+
+  ENDMETHOD.
+
+
+  METHOD inserts_should_be.
+    cl_abap_unit_assert=>assert_equals( act = inserts
+                                        exp = i_scarr
+                                        msg = `Inserts not as expected` ).
+  ENDMETHOD.
+
+
+  METHOD changes_should_be.
+    cl_abap_unit_assert=>assert_equals( act = updates
+                                        exp = i_scarr
+                                        msg = `Changes not as expected` ).
+  ENDMETHOD.
+
+
+  METHOD deletes_should_be.
+    cl_abap_unit_assert=>assert_equals( act = deletes
+                                        exp = i_scarr
+                                        msg = `Deletes not as expected` ).
+  ENDMETHOD.
+
+
+ENDCLASS.
