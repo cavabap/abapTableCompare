@@ -1,22 +1,52 @@
 interface ZIF_TABLE_COMPARISON
   public .
-  "!     compare two identical itabs (old vs. new; PBO vs. PAI)
-  "! CHANGEDOCUMENT_PREPARE_TABLES
+
+  "! <p class="shorttext synchronized" lang="en">compare two identical itabs </p>
+  "! e.g. old vs. new,  PBO vs. PAI
+  "! uses CHANGEDOCUMENT_PREPARE_TABLES
   "!
-  "!  The static method COMPARE contains two IMPORTING parameters
+  "!
+  "!  COMPARE contains two IMPORTING parameters
   "!  corresponding to the internal tables storing the PAI data (new) and
   "!  the PBO data (old), respectively. The results of the comparison are
   "!  exported as internal tables having the same line type
   "!  as the PBO/PAI data.
+  "!
+  "! @parameter internal_table_new | <p class="shorttext synchronized" lang="en">itab with current data (PAI)</p>
+  "! @parameter internal_table_old | <p class="shorttext synchronized" lang="en">itab with old data (PBO)</p>
+  "! @parameter inserted | <p class="shorttext synchronized" lang="en">itab with new data</p>
+  "! @parameter updated | <p class="shorttext synchronized" lang="en">itab with changed data</p>
+  "! @parameter deleted | <p class="shorttext synchronized" lang="en">itab with deleted data</p>
+  "! @raising zcx_table_comparison | <p class="shorttext synchronized" lang="en"></p>
   METHODS
     compare
       IMPORTING
-        VALUE(it_itab_new) TYPE table " itab with current data (PAI)
-        VALUE(it_itab_old) TYPE table " itab with old data     (PBO)
+        VALUE(internal_table_new) TYPE table
+        VALUE(internal_table_old) TYPE table
       EXPORTING
-        et_insert          TYPE table " itab with new data
-        et_update          TYPE table " itab with changed data
-        et_delete          TYPE table " itab with deleted data
+        inserted          TYPE table
+        updated          TYPE table
+        deleted          TYPE table
+      RAISING zcx_table_comparison.
+
+
+  "! <p class="shorttext synchronized" lang="en">compare current itabs with contents of database table</p>
+  "! e.g. old vs. new,  PBO vs. PAI
+  "! uses compare method
+  "!
+  "! @parameter internal_table | <p class="shorttext synchronized" lang="en">itab with current data (PAI)</p>
+  "! @parameter inserted | <p class="shorttext synchronized" lang="en">itab with new data</p>
+  "! @parameter updated | <p class="shorttext synchronized" lang="en">itab with changed data</p>
+  "! @parameter deleted | <p class="shorttext synchronized" lang="en">itab with deleted data</p>
+  "! @raising zcx_table_comparison | <p class="shorttext synchronized" lang="en"></p>
+  METHODS
+    compare_with_database
+      IMPORTING
+        VALUE(internal_table) TYPE table
+      EXPORTING
+        inserted          TYPE table
+        updated          TYPE table
+        deleted          TYPE table
       RAISING zcx_table_comparison.
 
 endinterface.

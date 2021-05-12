@@ -10,6 +10,20 @@
     <STATE>1</STATE>
     <UNICODE>X</UNICODE>
    </VSEOINTERF>
+   <DESCRIPTIONS>
+    <SEOCOMPOTX>
+     <CLSNAME>ZIF_TABLE_COMPARISON</CLSNAME>
+     <CMPNAME>COMPARE</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>compare two identical itabs</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZIF_TABLE_COMPARISON</CLSNAME>
+     <CMPNAME>COMPARE_WITH_DATABASE</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>compare current itabs with contents of database table</DESCRIPT>
+    </SEOCOMPOTX>
+   </DESCRIPTIONS>
   </asx:values>
  </asx:abap>
 </abapGit>

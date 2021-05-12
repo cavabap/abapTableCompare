@@ -4,11 +4,28 @@ CLASS zcl_table_comparison DEFINITION
   GLOBAL FRIENDS zcl_table_comparison_factory.
 
   PUBLIC SECTION.
-    INTERFACES: ZIF_TABLE_COMPARISON.
+    INTERFACES: zif_table_comparison.
 
 
   PROTECTED SECTION.
   PRIVATE SECTION.
+    CONSTANTS c_change_indicator_column_name TYPE string VALUE 'CHIND' ##NO_TEXT.
+    METHODS get_sort_order_from_table_keys
+      IMPORTING
+        database_table_description_new TYPE REF TO cl_abap_tabledescr
+      RETURNING
+        VALUE(r_result)         TYPE abap_sortorder_tab.
+    METHODS get_deleted_lines
+      IMPORTING
+        itab_old_with_change_ind TYPE table
+      EXPORTING
+        deleted_lines            TYPE table.
+    METHODS get_inserted_and_update_lines
+      IMPORTING
+        itab_new_with_change_ind TYPE table
+      EXPORTING
+        et_insert                TYPE table
+        et_update                TYPE table.
 ENDCLASS.
 
 
@@ -18,121 +35,74 @@ CLASS zcl_table_comparison IMPLEMENTATION.
 
   METHOD zif_table_comparison~compare.
 
-* define local data
-    DATA:
-      ld_struc_old TYPE string,
-      ld_struc_new TYPE string,
-      ld_tabname   TYPE tabname,
-      ldo_new      TYPE REF TO data,
-      ldo_old      TYPE REF TO data,
-*
-      ldo_struc    TYPE REF TO data,
-      ldo_di_struc TYPE REF TO data,
-      ldo_di_new   TYPE REF TO data,
-      ldo_di_old   TYPE REF TO data,
-*
-      ldo_insert   TYPE REF TO data,
-      ldo_update   TYPE REF TO data,
-      ldo_delete   TYPE REF TO data.
-
-
-    TYPES: BEGIN OF ty_s_di.
-    TYPES:   chind    TYPE bu_chind.  " change indicator
-    TYPES: END OF ty_s_di.
-    DATA:
-      ls_chind           TYPE ty_s_di.
-
-
-*    TYPES: BEGIN OF ty_s_di.
-*    TYPES:   chind    TYPE bu_chind.  " change indicator
-*    TYPES: END OF ty_s_di.
-*    DATA:
-*      ls_chind           TYPE ty_s_di.
-
+    TYPES: BEGIN OF ty_change_indicator,
+        chind    TYPE bu_chind,  " change indicator
+    END OF ty_change_indicator.
 
     DATA:
-      lt_components    TYPE cl_abap_structdescr=>component_table,
-      lt_components_di TYPE cl_abap_structdescr=>component_table,
-      ls_component     LIKE LINE OF lt_components,
-      lo_tab_new       TYPE REF TO cl_abap_tabledescr,
-      lo_tab_old       TYPE REF TO cl_abap_tabledescr,
-      lo_tab_di        TYPE REF TO cl_abap_tabledescr,
-      lo_strucdescr    TYPE REF TO cl_abap_structdescr,
-      lo_typedescr     TYPE REF TO cl_abap_typedescr,
-      lt_tabkey        TYPE abap_keydescr_tab.
+      change_indicator           TYPE ty_change_indicator,
+      structure_name_old TYPE string,
+      structure_name_new TYPE string,
+      table_name         TYPE tabname,
+      itab_new_with_change_ind_ref         TYPE REF TO data,
+      itab_old_with_change_ind_ref         TYPE REF TO data,
+      table_description_new TYPE REF TO cl_abap_tabledescr,
+      table_description_old TYPE REF TO cl_abap_tabledescr,
+      internal_table_discription     TYPE REF TO cl_abap_tabledescr,
+      structure_description TYPE REF TO cl_abap_structdescr.
 
     FIELD-SYMBOLS:
-      <ld_chind>  TYPE bu_chind,
-*
-      <ls_struc>  TYPE any,
-      <ls_di>     TYPE any,
-*
-      <lt_old_di> TYPE table,
-      <lt_new_di> TYPE table.
-
-
+      <itab_old_with_change_ind>   TYPE table,
+      <itab_new_with_change_ind>   TYPE table.
 
 *   Get RTTI of new itab
-    lo_tab_new ?= cl_abap_typedescr=>describe_by_data( it_itab_new ).
-    lo_strucdescr ?= lo_tab_new->get_table_line_type( ).
-    ld_struc_new = lo_strucdescr->get_relative_name( ).
-    ld_tabname = ld_struc_new.  " type conversion for function module
+    table_description_new ?= cl_abap_typedescr=>describe_by_data( internal_table_new ).
+    table_description_new->get_relative_name( ).
+    structure_description ?= table_description_new->get_table_line_type( ).
+    structure_name_new = structure_description->get_relative_name( ).
+    table_name = structure_name_new.  " type conversion for function module
 
 *   Get RTTI of old itab
-    lo_tab_old ?= cl_abap_typedescr=>describe_by_data( it_itab_old ).
-    lo_strucdescr ?= lo_tab_old->get_table_line_type( ).
-    ld_struc_old = lo_strucdescr->get_relative_name( ).
+    table_description_old ?= cl_abap_typedescr=>describe_by_data( internal_table_old ).
+    structure_description ?= table_description_old->get_table_line_type( ).
+    structure_name_old = structure_description->get_relative_name( ).
 
-    IF ( ld_struc_old NE ld_struc_new ).
+    IF structure_name_old <> structure_name_new.
 *      RAISE error.  " itab's have different line types
       ##TODO "message text export
       RAISE EXCEPTION TYPE zcx_table_comparison.
     ENDIF.
 
-
-*   Create variable having line type of new/old itab
-    CREATE DATA ldo_struc TYPE HANDLE lo_strucdescr.
-    ASSIGN ldo_struc->* TO <ls_struc>.  " line type of new/old itab
-
-
 *   Get components of new/old itab and add component CHIND
-    lt_components_di = lo_strucdescr->get_components( ).
+    DATA(all_fields) = structure_description->get_components( ).
 
-    REFRESH: lt_components.
-    CLEAR: ls_chind.
-    lo_strucdescr ?= cl_abap_typedescr=>describe_by_data( ls_chind ).
-    lt_components  = lo_strucdescr->get_components( ).
-    APPEND LINES OF lt_components TO lt_components_di.
-
-
+*    CLEAR: change_indicator.
+    structure_description ?= cl_abap_typedescr=>describe_by_data( change_indicator ).
+    DATA(change_indicator_components)  = structure_description->get_components( ).
+    APPEND LINES OF change_indicator_components TO all_fields.
 
 *   Create variable having line type of new/old itab with additional
 *   change indicator field & corresponding itab
-    lo_strucdescr = cl_abap_structdescr=>create( lt_components_di ).
-    lo_tab_di     = cl_abap_tabledescr=>create( lo_strucdescr ).
+    structure_description = cl_abap_structdescr=>create( all_fields ).
+    internal_table_discription     = cl_abap_tabledescr=>create( structure_description ).
 
-    CREATE DATA ldo_di_struc  TYPE HANDLE lo_strucdescr.
-    CREATE DATA ldo_di_new    TYPE HANDLE lo_tab_di.
-    CREATE DATA ldo_di_old    TYPE HANDLE lo_tab_di.
+    CREATE DATA itab_new_with_change_ind_ref    TYPE HANDLE internal_table_discription.
+    CREATE DATA itab_old_with_change_ind_ref    TYPE HANDLE internal_table_discription.
 *
-    ASSIGN ldo_di_struc->*  TO <ls_di>.
-    ASSIGN ldo_di_new->*    TO <lt_new_di>.
-    ASSIGN ldo_di_old->*    TO <lt_old_di>.
-
-
+    ASSIGN itab_new_with_change_ind_ref->*    TO <itab_new_with_change_ind>.
+    ASSIGN itab_old_with_change_ind_ref->*    TO <itab_old_with_change_ind>.
 
 *   Shuffle data from new itab into corresponding itab
 *   with change indicator (field CHIND)
-    LOOP AT it_itab_new INTO <ls_struc>.
-      MOVE-CORRESPONDING <ls_struc> TO <ls_di>.
-      APPEND <ls_di> TO <lt_new_di>.
-    ENDLOOP.
+    MOVE-CORRESPONDING internal_table_new TO <itab_new_with_change_ind>.
 *   Shuffle data from old itab into corresponding itab
 *   with change indicator (field CHIND)
-    LOOP AT it_itab_old INTO <ls_struc>.
-      MOVE-CORRESPONDING <ls_struc> TO <ls_di>.
-      APPEND <ls_di> TO <lt_old_di>.
-    ENDLOOP.
+    MOVE-CORRESPONDING internal_table_old TO <itab_old_with_change_ind>.
+
+
+    DATA(sort_order) = get_sort_order_from_table_keys( table_description_new ).
+    SORT <itab_old_with_change_ind> BY (sort_order).
+    SORT <itab_new_with_change_ind> BY (sort_order).
 
 * NOTE: If check_indicator = ' ' then the itab's are condensed meaning
 *       that identical entries are removed from both itab's.
@@ -146,12 +116,12 @@ CLASS zcl_table_comparison IMPLEMENTATION.
     CALL FUNCTION 'CHANGEDOCUMENT_PREPARE_TABLES'
       EXPORTING
         check_indicator        = abap_false
-        tablename              = ld_tabname
+        tablename              = table_name
 *   IMPORTING
 *       RESULT                 =
       TABLES
-        table_new              = <lt_new_di>
-        table_old              = <lt_old_di>
+        table_new              = <itab_new_with_change_ind>
+        table_old              = <itab_old_with_change_ind>
       EXCEPTIONS
         nametab_error          = 1
         wrong_structure_length = 2
@@ -164,47 +134,110 @@ CLASS zcl_table_comparison IMPLEMENTATION.
       RAISE EXCEPTION TYPE zcx_table_comparison.
     ENDIF.
 
-
-
 *   Fill the output itab's depending on the change indicator
-*   of the records
-    LOOP AT <lt_new_di> INTO <ls_di>.  " new itab -> INSERT & UPDATE
-      MOVE-CORRESPONDING <ls_di> TO <ls_struc>.
-      ASSIGN COMPONENT 'CHIND' OF STRUCTURE <ls_di> TO <ld_chind>.
+    get_inserted_and_update_lines(
+      EXPORTING
+        itab_new_with_change_ind = <itab_new_with_change_ind>
+      IMPORTING
+        et_insert = inserted
+        et_update = updated ).
+    get_deleted_lines(
+      EXPORTING
+        itab_old_with_change_ind = <itab_old_with_change_ind>
+      IMPORTING
+        deleted_lines = deleted ).
 
-      CASE <ld_chind>.
+  ENDMETHOD.
+
+  METHOD get_inserted_and_update_lines.
+
+    FIELD-SYMBOLS:
+              <change_indictator>  TYPE bu_chind.
+    LOOP AT itab_new_with_change_ind ASSIGNING FIELD-SYMBOL(<table_line_with_change_ind2>).  " new itab -> INSERT & UPDATE
+      ASSIGN COMPONENT c_change_indicator_column_name OF STRUCTURE <table_line_with_change_ind2> TO <change_indictator>.
+
+      CASE <change_indictator>.
 *       New entry (INSERT)
         WHEN 'I'.
-          APPEND <ls_struc> TO et_insert.
+
+          APPEND INITIAL LINE TO et_insert ASSIGNING FIELD-SYMBOL(<inserted_line>).
+          MOVE-CORRESPONDING <table_line_with_change_ind2> TO <inserted_line>.
 
 *       Modified entry (UPDATE)
         WHEN 'U'.
-          APPEND <ls_struc> TO et_update.
+          APPEND INITIAL LINE TO et_update ASSIGNING FIELD-SYMBOL(<updated_line>).
+          MOVE-CORRESPONDING <table_line_with_change_ind2> TO <updated_line>.
 
 *       should not occur
         WHEN OTHERS.
-          CONTINUE.
+          ASSERT 1 = 0.
       ENDCASE.
 
     ENDLOOP.
 
-    LOOP AT <lt_old_di> INTO <ls_di>.  " old itab -> DELETE
-      MOVE-CORRESPONDING <ls_di> TO <ls_struc>.
-      ASSIGN COMPONENT 'CHIND' OF STRUCTURE <ls_di> TO <ld_chind>.
+  ENDMETHOD.
 
-      CASE <ld_chind>.
+  METHOD get_deleted_lines.
+
+    FIELD-SYMBOLS:
+          <change_indictator>  TYPE bu_chind.
+    LOOP AT itab_old_with_change_ind ASSIGNING FIELD-SYMBOL(<table_line_with_change_ind>).  " old itab -> DELETE
+      ASSIGN COMPONENT c_change_indicator_column_name OF STRUCTURE <table_line_with_change_ind> TO <change_indictator>.
+
+      CASE <change_indictator>.
 *       Delete entry (DELETE)
         WHEN 'D'.
-          APPEND <ls_struc> TO et_delete.
+          APPEND INITIAL LINE TO deleted_lines ASSIGNING FIELD-SYMBOL(<delete_line>).
+          MOVE-CORRESPONDING <table_line_with_change_ind> TO <delete_line>.
 
-*       Modified entry (old values)
+*       Modified entry (UPDATE)
         WHEN OTHERS.
-          CONTINUE.
+*          ASSERT 1 = 0.
       ENDCASE.
 
     ENDLOOP.
 
+  ENDMETHOD.
 
-  ENDMETHOD.                    "compare
+  METHOD get_sort_order_from_table_keys.
+
+    DATA(keys) = database_table_description_new->get_keys( ).
+    LOOP AT keys ASSIGNING FIELD-SYMBOL(<key>) WHERE is_primary = abap_true.
+      r_result = VALUE #( BASE r_result FOR key_component IN <key>-components FOR key IN keys ( name = key_component-name ) ).
+    ENDLOOP.
+
+  ENDMETHOD.
+
+
+
+  METHOD zif_table_comparison~compare_with_database.
+    DATA internal_table_description TYPE REF TO cl_abap_tabledescr.
+    DATA internal_table_db_ref         TYPE REF TO data.
+    DATA structure_description TYPE REF TO cl_abap_structdescr.
+
+    FIELD-SYMBOLS:
+      <internal_table_db>   TYPE table.
+
+   internal_table_description ?= cl_abap_typedescr=>describe_by_data( internal_table ).
+
+**   Get RTTI of database table
+    structure_description ?= internal_table_description->get_table_line_type( ).
+    DATA(table_name) = structure_description->get_relative_name( ).
+
+    CREATE DATA internal_table_db_ref TYPE HANDLE internal_table_description.
+
+    ASSIGN internal_table_db_ref->* TO <internal_table_db>.
+
+    SELECT * FROM (table_name) INTO TABLE @<internal_table_db>. ##TODO "include an optional where clause?
+
+    me->zif_table_comparison~compare(
+      EXPORTING
+        internal_table_new = internal_table
+        internal_table_old = <internal_table_db>
+      IMPORTING
+        inserted   = inserted
+        updated   = updated
+        deleted   = deleted ).
+  ENDMETHOD.
 
 ENDCLASS.
