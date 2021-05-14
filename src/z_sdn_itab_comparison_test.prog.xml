@@ -12,9 +12,57 @@
    </PROGDIR>
    <TPOOL>
     <item>
+     <ID>I</ID>
+     <KEY>DEL</KEY>
+     <ENTRY>DELETE: deleted entries</ENTRY>
+     <LENGTH>75</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>INS</KEY>
+     <ENTRY>INSERT: new entries</ENTRY>
+     <LENGTH>75</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>NEW</KEY>
+     <ENTRY>New Internal Table Entries (e.g. PAI)</ENTRY>
+     <LENGTH>75</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>OLD</KEY>
+     <ENTRY>Old Internal Table Entries (e.g. PBO)</ENTRY>
+     <LENGTH>75</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>UPD</KEY>
+     <ENTRY>UPDATE: changed entries</ENTRY>
+     <LENGTH>75</LENGTH>
+    </item>
+    <item>
      <ID>R</ID>
      <ENTRY>Program Z_SDN_ITAB_COMPARISON_TEST</ENTRY>
      <LENGTH>34</LENGTH>
+    </item>
+    <item>
+     <ID>S</ID>
+     <KEY>P_DEL</KEY>
+     <ENTRY>delete scenario</ENTRY>
+     <LENGTH>23</LENGTH>
+    </item>
+    <item>
+     <ID>S</ID>
+     <KEY>P_INS</KEY>
+     <ENTRY>insert scenario</ENTRY>
+     <LENGTH>23</LENGTH>
+    </item>
+    <item>
+     <ID>S</ID>
+     <KEY>P_UPD</KEY>
+     <ENTRY>update scenario</ENTRY>
+     <LENGTH>23</LENGTH>
     </item>
    </TPOOL>
   </asx:values>
