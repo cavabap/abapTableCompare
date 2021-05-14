@@ -1,6 +1,8 @@
 # abapTableCompare
 Compares two tables and reports which lines are unchanged, inserted, deleted or changed.
 
+Target Platform ABAP 7.4+
+
 # Example
 ```
     TYPES t_itab TYPE STANDARD TABLE OF scarr WITH KEY carrid.
