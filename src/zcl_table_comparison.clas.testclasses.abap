@@ -5,6 +5,7 @@ CLASS ltc_function_tests DEFINITION FOR TESTING
 
   PROTECTED SECTION.
 
+
     TYPES t_itab TYPE STANDARD TABLE OF scarr WITH KEY carrid.
     DATA scarr_old TYPE t_itab.
     DATA scarr_new TYPE t_itab.
@@ -25,19 +26,11 @@ CLASS ltc_function_tests DEFINITION FOR TESTING
     METHODS unsorted_rows_are_the_same FOR TESTING RAISING cx_static_check.
     METHODS multiple_changes FOR TESTING RAISING cx_static_check.
 
-
-
   PRIVATE SECTION.
 
-
-
-
-    METHODS deletes_should_be IMPORTING VALUE(i_scarr) TYPE t_itab OPTIONAL.
-    METHODS changes_should_be IMPORTING VALUE(i_scarr) TYPE t_itab OPTIONAL.
-    METHODS inserts_should_be IMPORTING VALUE(i_scarr) TYPE t_itab OPTIONAL.
-
-
-
+    METHODS deletes_should_be IMPORTING VALUE(scarr) TYPE t_itab OPTIONAL.
+    METHODS changes_should_be IMPORTING VALUE(scarr) TYPE t_itab OPTIONAL.
+    METHODS inserts_should_be IMPORTING VALUE(scarr) TYPE t_itab OPTIONAL.
 
 ENDCLASS.
 
@@ -148,25 +141,25 @@ CLASS ltc_function_tests IMPLEMENTATION.
 
 
   METHOD inserts_should_be.
-    fill_client( CHANGING scarr = i_scarr ).
+    fill_client( CHANGING scarr = scarr ).
     cl_abap_unit_assert=>assert_equals( act = inserts
-                                        exp = i_scarr
+                                        exp = scarr
                                         msg = `Inserts not as expected` ).
   ENDMETHOD.
 
 
   METHOD changes_should_be.
-    fill_client( CHANGING scarr = i_scarr ).
+    fill_client( CHANGING scarr = scarr ).
     cl_abap_unit_assert=>assert_equals( act = updates
-                                        exp = i_scarr
+                                        exp = scarr
                                         msg = `Changes not as expected` ).
   ENDMETHOD.
 
 
   METHOD deletes_should_be.
-    fill_client( CHANGING scarr = i_scarr ).
+    fill_client( CHANGING scarr = scarr ).
     cl_abap_unit_assert=>assert_equals( act = deletes
-                                        exp = i_scarr
+                                        exp = scarr
                                         msg = `Deletes not as expected` ).
   ENDMETHOD.
 

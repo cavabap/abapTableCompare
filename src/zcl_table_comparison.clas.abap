@@ -57,7 +57,6 @@ CLASS zcl_table_comparison IMPLEMENTATION.
 
 *   Get RTTI of new itab
     table_description_new ?= cl_abap_typedescr=>describe_by_data( internal_table_new ).
-    table_description_new->get_relative_name( ).
     structure_description ?= table_description_new->get_table_line_type( ).
     structure_name_new = structure_description->get_relative_name( ).
     table_name = structure_name_new.  " type conversion for function module
@@ -75,14 +74,11 @@ CLASS zcl_table_comparison IMPLEMENTATION.
 
 *   Get components of new/old itab and add component CHIND
     DATA(all_fields) = structure_description->get_components( ).
-
-*    CLEAR: change_indicator.
     structure_description ?= cl_abap_typedescr=>describe_by_data( change_indicator ).
     DATA(change_indicator_components)  = structure_description->get_components( ).
     APPEND LINES OF change_indicator_components TO all_fields.
 
-*   Create variable having line type of new/old itab with additional
-*   change indicator field & corresponding itab
+*   Create variable having line type of new/old itab with additional change indicator field & corresponding itab
     structure_description = cl_abap_structdescr=>create( all_fields ).
     internal_table_discription     = cl_abap_tabledescr=>create( structure_description ).
 
@@ -92,11 +88,9 @@ CLASS zcl_table_comparison IMPLEMENTATION.
     ASSIGN itab_new_with_change_ind_ref->*    TO <itab_new_with_change_ind>.
     ASSIGN itab_old_with_change_ind_ref->*    TO <itab_old_with_change_ind>.
 
-*   Shuffle data from new itab into corresponding itab
-*   with change indicator (field CHIND)
+*   Shuffle data from new itab into corresponding itab with change indicator (field CHIND)
     MOVE-CORRESPONDING internal_table_new TO <itab_new_with_change_ind>.
-*   Shuffle data from old itab into corresponding itab
-*   with change indicator (field CHIND)
+*   Shuffle data from old itab into corresponding itab with change indicator (field CHIND)
     MOVE-CORRESPONDING internal_table_old TO <itab_old_with_change_ind>.
 
 
@@ -190,9 +184,8 @@ CLASS zcl_table_comparison IMPLEMENTATION.
           APPEND INITIAL LINE TO deleted_lines ASSIGNING FIELD-SYMBOL(<delete_line>).
           MOVE-CORRESPONDING <table_line_with_change_ind> TO <delete_line>.
 
-*       Modified entry (UPDATE)
+*       Modified entry (UPDATE) (already handled above)
         WHEN OTHERS.
-*          ASSERT 1 = 0.
       ENDCASE.
 
     ENDLOOP.
