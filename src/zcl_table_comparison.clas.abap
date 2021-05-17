@@ -14,17 +14,22 @@ CLASS zcl_table_comparison DEFINITION
       IMPORTING
         database_table_description_new TYPE REF TO cl_abap_tabledescr
       RETURNING
-        VALUE(r_result)         TYPE abap_sortorder_tab.
+        VALUE(r_result)                TYPE abap_sortorder_tab.
     METHODS get_deleted_lines
       IMPORTING
         itab_old_with_change_ind TYPE table
       EXPORTING
         deleted_lines            TYPE table.
-    METHODS get_inserted_and_update_lines
+    METHODS get_inserted_lines
       IMPORTING
         itab_new_with_change_ind TYPE table
       EXPORTING
         et_insert                TYPE table
+        et_update                TYPE table.
+    METHODS get_updated_lines
+      IMPORTING
+        itab_new_with_change_ind TYPE table
+      EXPORTING
         et_update                TYPE table.
 ENDCLASS.
 
@@ -36,24 +41,24 @@ CLASS zcl_table_comparison IMPLEMENTATION.
   METHOD zif_table_comparison~compare.
 
     TYPES: BEGIN OF ty_change_indicator,
-        chind    TYPE bu_chind,  " change indicator
-    END OF ty_change_indicator.
+             chind TYPE bu_chind,  " change indicator
+           END OF ty_change_indicator.
 
     DATA:
-      change_indicator           TYPE ty_change_indicator,
-      structure_name_old TYPE string,
-      structure_name_new TYPE string,
-      table_name         TYPE tabname,
-      itab_new_with_change_ind_ref         TYPE REF TO data,
-      itab_old_with_change_ind_ref         TYPE REF TO data,
-      table_description_new TYPE REF TO cl_abap_tabledescr,
-      table_description_old TYPE REF TO cl_abap_tabledescr,
-      internal_table_discription     TYPE REF TO cl_abap_tabledescr,
-      structure_description TYPE REF TO cl_abap_structdescr.
+      change_indicator             TYPE ty_change_indicator,
+      structure_name_old           TYPE string,
+      structure_name_new           TYPE string,
+      table_name                   TYPE tabname,
+      itab_new_with_change_ind_ref TYPE REF TO data,
+      itab_old_with_change_ind_ref TYPE REF TO data,
+      table_description_new        TYPE REF TO cl_abap_tabledescr,
+      table_description_old        TYPE REF TO cl_abap_tabledescr,
+      internal_table_discription   TYPE REF TO cl_abap_tabledescr,
+      structure_description        TYPE REF TO cl_abap_structdescr.
 
     FIELD-SYMBOLS:
-      <itab_old_with_change_ind>   TYPE table,
-      <itab_new_with_change_ind>   TYPE table.
+      <itab_old_with_change_ind> TYPE table,
+      <itab_new_with_change_ind> TYPE table.
 
 *   Get RTTI of new itab
     table_description_new ?= cl_abap_typedescr=>describe_by_data( internal_table_new ).
@@ -129,42 +134,64 @@ CLASS zcl_table_comparison IMPLEMENTATION.
     ENDIF.
 
 *   Fill the output itab's depending on the change indicator
-    get_inserted_and_update_lines(
+    IF inserted IS SUPPLIED.
+    get_inserted_lines(
       EXPORTING
         itab_new_with_change_ind = <itab_new_with_change_ind>
       IMPORTING
-        et_insert = inserted
-        et_update = updated ).
-    get_deleted_lines(
-      EXPORTING
-        itab_old_with_change_ind = <itab_old_with_change_ind>
-      IMPORTING
-        deleted_lines = deleted ).
+        et_insert = inserted ).
+    ENDIF.
+
+    IF updated IS SUPPLIED.
+      get_updated_lines(
+        EXPORTING
+        itab_new_with_change_ind = <itab_new_with_change_ind>
+        IMPORTING
+          et_update = updated ).
+    ENDIF.
+
+    IF deleted IS SUPPLIED.
+      get_deleted_lines(
+        EXPORTING
+          itab_old_with_change_ind = <itab_old_with_change_ind>
+        IMPORTING
+          deleted_lines = deleted ).
+    ENDIF.
 
   ENDMETHOD.
 
-  METHOD get_inserted_and_update_lines.
+  METHOD get_inserted_lines.
 
     FIELD-SYMBOLS:
               <change_indictator>  TYPE bu_chind.
-    LOOP AT itab_new_with_change_ind ASSIGNING FIELD-SYMBOL(<table_line_with_change_ind2>).  " new itab -> INSERT & UPDATE
-      ASSIGN COMPONENT c_change_indicator_column_name OF STRUCTURE <table_line_with_change_ind2> TO <change_indictator>.
+    LOOP AT itab_new_with_change_ind ASSIGNING FIELD-SYMBOL(<table_line_with_change_ind>).  " new itab -> INSERT & UPDATE
+      ASSIGN COMPONENT c_change_indicator_column_name OF STRUCTURE <table_line_with_change_ind> TO <change_indictator>.
 
       CASE <change_indictator>.
 *       New entry (INSERT)
         WHEN 'I'.
-
           APPEND INITIAL LINE TO et_insert ASSIGNING FIELD-SYMBOL(<inserted_line>).
-          MOVE-CORRESPONDING <table_line_with_change_ind2> TO <inserted_line>.
+          MOVE-CORRESPONDING <table_line_with_change_ind> TO <inserted_line>.
 
+      ENDCASE.
+
+    ENDLOOP.
+
+  ENDMETHOD.
+
+
+  METHOD get_updated_lines.
+
+    FIELD-SYMBOLS:
+              <change_indictator>  TYPE bu_chind.
+    LOOP AT itab_new_with_change_ind ASSIGNING FIELD-SYMBOL(<table_line_with_change_ind>).  " new itab -> INSERT & UPDATE
+      ASSIGN COMPONENT c_change_indicator_column_name OF STRUCTURE <table_line_with_change_ind> TO <change_indictator>.
+
+      CASE <change_indictator>.
 *       Modified entry (UPDATE)
         WHEN 'U'.
           APPEND INITIAL LINE TO et_update ASSIGNING FIELD-SYMBOL(<updated_line>).
-          MOVE-CORRESPONDING <table_line_with_change_ind2> TO <updated_line>.
-
-*       should not occur
-        WHEN OTHERS.
-          ASSERT 1 = 0.
+          MOVE-CORRESPONDING <table_line_with_change_ind> TO <updated_line>.
       ENDCASE.
 
     ENDLOOP.
@@ -211,7 +238,7 @@ CLASS zcl_table_comparison IMPLEMENTATION.
     FIELD-SYMBOLS:
       <internal_table_db>   TYPE table.
 
-   internal_table_description ?= cl_abap_typedescr=>describe_by_data( internal_table ).
+    internal_table_description ?= cl_abap_typedescr=>describe_by_data( internal_table ).
 
 **   Get RTTI of database table
     structure_description ?= internal_table_description->get_table_line_type( ).

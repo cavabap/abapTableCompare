@@ -31,6 +31,9 @@ CLASS ltc_function_tests DEFINITION FOR TESTING
     METHODS deletes_should_be IMPORTING VALUE(scarr) TYPE t_itab OPTIONAL.
     METHODS changes_should_be IMPORTING VALUE(scarr) TYPE t_itab OPTIONAL.
     METHODS inserts_should_be IMPORTING VALUE(scarr) TYPE t_itab OPTIONAL.
+    METHODS deleted_wo_param_then_no_dump FOR TESTING RAISING cx_static_check.
+    METHODS inserted_wo_param_then_no_dump FOR TESTING RAISING cx_static_check.
+    METHODS updated_wo_param_then_no_dump FOR TESTING RAISING cx_static_check.
 
 ENDCLASS.
 
@@ -164,8 +167,42 @@ CLASS ltc_function_tests IMPLEMENTATION.
   ENDMETHOD.
 
 
+  METHOD deleted_wo_param_then_no_dump.
+
+    scarr_old = VALUE #( ( carrid = 'AA' ) ).
+    scarr_new = VALUE #( ).
+
+    zcl_table_comparison_factory=>create_table_comparison( )->compare(
+        EXPORTING
+          internal_table_new = scarr_new
+          internal_table_old = scarr_old ).
+
+  ENDMETHOD.
 
 
+  METHOD inserted_wo_param_then_no_dump.
+
+    scarr_old = VALUE #( ).
+    scarr_new = VALUE #( ( carrid = 'AA' ) ).
+
+    zcl_table_comparison_factory=>create_table_comparison( )->compare(
+        EXPORTING
+          internal_table_new = scarr_new
+          internal_table_old = scarr_old ).
+
+  ENDMETHOD.
+
+  METHOD updated_wo_param_then_no_dump.
+
+    scarr_old = VALUE #( ( carrid = 'AA' ) ).
+    scarr_new = VALUE #( ( carrid = 'AA' carrname = 'Any Airline' ) ).
+
+    zcl_table_comparison_factory=>create_table_comparison( )->compare(
+        EXPORTING
+          internal_table_new = scarr_new
+          internal_table_old = scarr_old ).
+
+  ENDMETHOD.
 ENDCLASS.
 
 CLASS ltc_db_compare DEFINITION CREATE PUBLIC FOR TESTING RISK LEVEL HARMLESS DURATION SHORT INHERITING FROM ltc_function_tests.
