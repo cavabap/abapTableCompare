@@ -48,19 +48,19 @@
     </item>
     <item>
      <ID>S</ID>
-     <KEY>P_DEL</KEY>
+     <KEY>P_DELETE</KEY>
      <ENTRY>delete scenario</ENTRY>
      <LENGTH>23</LENGTH>
     </item>
     <item>
      <ID>S</ID>
-     <KEY>P_INS</KEY>
+     <KEY>P_INSERT</KEY>
      <ENTRY>insert scenario</ENTRY>
      <LENGTH>23</LENGTH>
     </item>
     <item>
      <ID>S</ID>
-     <KEY>P_UPD</KEY>
+     <KEY>P_UPDATE</KEY>
      <ENTRY>update scenario</ENTRY>
      <LENGTH>23</LENGTH>
     </item>

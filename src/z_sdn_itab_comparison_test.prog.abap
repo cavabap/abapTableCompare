@@ -6,30 +6,31 @@
 REPORT Z_SDN_ITAB_COMPARISON_TEST.
 
 
-PARAMETERS:
 "! NOTE: Mark the checkboxes in order to simulate a scenario
-  p_ins    AS CHECKBOX,
+PARAMETERS p_insert AS CHECKBOX.
+
 "! NOTE: Mark the checkboxes in order to simulate a scenario
-  p_upd    AS CHECKBOX,
+PARAMETERS p_update AS CHECKBOX.
+
 "! NOTE: Mark the checkboxes in order to simulate a scenario
-  p_del    AS CHECKBOX.
+PARAMETERS p_delete AS CHECKBOX.
 
 
 class lcl_interactive_test definition create public.
 
   public section.
-    METHODS
     "! interactive_test( ) generates simplified PBO data and PAI data for
     "! demonstrating the functionality of method COMPARE. PBO data and PAI
     "! data as well as the results are displayed as ALV lists.
     "! The interface of method contains three IMPORTING parameters
     "! (flags) for simulating PAI data that contain new, modified or deleted
     "! entries and any combination thereof.
+    METHODS
       interactive_test
         IMPORTING
-          id_insert TYPE abap_bool
-          id_update TYPE abap_bool
-          id_delete TYPE abap_bool.
+          insert_line TYPE abap_bool
+          update_line TYPE abap_bool
+          delete_line TYPE abap_bool.
   protected section.
   private section.
 
@@ -38,80 +39,72 @@ endclass.
 class lcl_interactive_test implementation.
 
   method interactive_test.
+    TYPES: ty_airlines TYPE STANDARD TABLE OF scarr.
 
-*   define local data
     DATA:
-      ld_gridtitle TYPE lvc_title,
-      ls_knb1      TYPE knb1,
-      lt_knb1_old  TYPE STANDARD TABLE OF knb1,
-      lt_knb1_new  TYPE STANDARD TABLE OF knb1,
-*
-      lt_knb1_ins  TYPE STANDARD TABLE OF knb1,
-      lt_knb1_upd  TYPE STANDARD TABLE OF knb1,
-      lt_knb1_del  TYPE STANDARD TABLE OF knb1.
+      gridtitle TYPE lvc_title,
+      airlines_old  TYPE ty_airlines,
+      airlines_new  TYPE ty_airlines,
+      airlines_inserted  TYPE ty_airlines,
+      airlines_updated  TYPE ty_airlines,
+      airlines_deleted  TYPE ty_airlines.
 
-
+    DATA(field_catalog) = VALUE lvc_t_fcat( ).
+    CALL FUNCTION 'LVC_FIELDCATALOG_MERGE'
+      EXPORTING
+        i_structure_name       = 'SCARR'
+      CHANGING
+        ct_fieldcat            = field_catalog
+      EXCEPTIONS
+        inconsistent_interface = 1
+        program_error          = 2
+        OTHERS                 = 3.
 
 *   Create 4 sample entries
-    DO 4 TIMES.
-      ls_knb1-bukrs = '1000'.
-      ls_knb1-kunnr = syst-index.
-      ls_knb1-loevm = abap_false.
-
-      APPEND ls_knb1 TO lt_knb1_new.
-      APPEND ls_knb1 TO lt_knb1_old.
-    ENDDO.
-*   NOTE: itab's are identical.
-
-
-*   Sorting is crucial for comparison!!!
-    SORT lt_knb1_new BY kunnr bukrs.
-    SORT lt_knb1_old BY kunnr bukrs.
-
+    airlines_old = airlines_new = VALUE #( ( carrid = 'AA' ) ( carrid = 'AB' )  ( carrid = 'LH' ) ( carrid = 'NZ' ) ).
 
 
 *   Delete first entry from old itab => first entry of new itab
-*   should be inserted (customer = '1' -> CHIND = 'I').
-    IF ( id_insert = abap_true ).
-      DELETE lt_knb1_old INDEX 1.
+*   should be inserted (carrid = 'AA' -> CHIND = 'I').
+    IF ( insert_line = abap_true ).
+      DELETE airlines_old INDEX 1.
     ENDIF.
 
 *   Modify second entry of new itab =>
-*   should be updated (customer = '2' -> CHIND = 'U')
-    IF ( id_update = abap_true ).
-      ls_knb1-loevm = abap_true.
-
-      MODIFY lt_knb1_new FROM ls_knb1 INDEX 2
-        TRANSPORTING loevm.
+*   should be updated (carrid = 'AB' -> CHIND = 'U')
+    IF ( update_line = abap_true ).
+      airlines_new[ 2 ]-carrname = 'Air Berlin'.
     ENDIF.
 
 *   Delete third entry from new itab =>
-*   should be deleted (customer = '3' -> CHIND = 'D').
-    IF ( id_delete = abap_true ).
-      DELETE lt_knb1_new INDEX 3.
+*   should be deleted (carrid = 'LH' -> CHIND = 'D').
+    IF ( delete_line = abap_true ).
+      DELETE airlines_new INDEX 3.
     ENDIF.
-*   NOTE: customer = '4' is identical in old and new itab => ignored
+*   NOTE: carrid = 'NZ' is identical in old and new itab => ignored
 
 
 *   Display "old" itab
-    ld_gridtitle = 'Old Internal Table Entries (e.g. PBO)'(old).
+    gridtitle = 'Old Internal Table Entries (e.g. PBO)'(old).
     CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY_LVC'
       EXPORTING
         i_structure_name = 'KNB1'
-        i_grid_title     = ld_gridtitle
+        i_grid_title     = gridtitle
+        it_fieldcat_lvc  = field_catalog
       TABLES
-        t_outtab         = lt_knb1_old
+        t_outtab         = airlines_old
       EXCEPTIONS
         program_error    = 1
         OTHERS           = 2.
 *   Display "new" itab
-    ld_gridtitle = 'New Internal Table Entries (e.g. PAI)'(new).
+    gridtitle = 'New Internal Table Entries (e.g. PAI)'(new).
     CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY_LVC'
       EXPORTING
         i_structure_name = 'KNB1'
-        i_grid_title     = ld_gridtitle
+        i_grid_title     = gridtitle
+        it_fieldcat_lvc  = field_catalog
       TABLES
-        t_outtab         = lt_knb1_new
+        t_outtab         = airlines_new
       EXCEPTIONS
         program_error    = 1
         OTHERS           = 2.
@@ -121,45 +114,48 @@ class lcl_interactive_test implementation.
 *   Compare old vs. new itab
     zcl_table_comparison_factory=>create_table_comparison( )->compare(
       EXPORTING
-        internal_table_new = lt_knb1_new
-        internal_table_old = lt_knb1_old
+        internal_table_new = airlines_new
+        internal_table_old = airlines_old
       IMPORTING
-        inserted   = lt_knb1_ins
-        updated   = lt_knb1_upd
-        deleted   = lt_knb1_del ).
+        inserted   = airlines_inserted
+        updated   = airlines_updated
+        deleted   = airlines_deleted ).
 
 
 
 *   Display new entries
-    ld_gridtitle = 'INSERT: new entries'(ins).
+    gridtitle = 'INSERT: new entries'(ins).
     CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY_LVC'
       EXPORTING
         i_structure_name = 'KNB1'
-        i_grid_title     = ld_gridtitle
+        i_grid_title     = gridtitle
+        it_fieldcat_lvc  = field_catalog
       TABLES
-        t_outtab         = lt_knb1_ins
+        t_outtab         = airlines_inserted
       EXCEPTIONS
         program_error    = 1
         OTHERS           = 2.
 *   Display changed entries
-    ld_gridtitle = 'UPDATE: changed entries'(upd).
+    gridtitle = 'UPDATE: changed entries'(upd).
     CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY_LVC'
       EXPORTING
         i_structure_name = 'KNB1'
-        i_grid_title     = ld_gridtitle
+        i_grid_title     = gridtitle
+        it_fieldcat_lvc  = field_catalog
       TABLES
-        t_outtab         = lt_knb1_upd
+        t_outtab         = airlines_updated
       EXCEPTIONS
         program_error    = 1
         OTHERS           = 2.
 *   Display deleted entries
-    ld_gridtitle = 'DELETE: deleted entries'(del).
+    gridtitle = 'DELETE: deleted entries'(del).
     CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY_LVC'
       EXPORTING
         i_structure_name = 'KNB1'
-        i_grid_title     = ld_gridtitle
+        i_grid_title     = gridtitle
+        it_fieldcat_lvc  = field_catalog
       TABLES
-        t_outtab         = lt_knb1_del
+        t_outtab         = airlines_deleted
       EXCEPTIONS
         program_error    = 1
         OTHERS           = 2.
@@ -171,8 +167,6 @@ endclass.
 START-OF-SELECTION.
 
   new lcl_interactive_test( )->interactive_test(
-    id_insert = p_ins
-    id_update = p_upd
-    id_delete = p_del ).
-
-END-OF-SELECTION.
+    insert_line = p_insert
+    update_line = p_update
+    delete_line = p_delete ).

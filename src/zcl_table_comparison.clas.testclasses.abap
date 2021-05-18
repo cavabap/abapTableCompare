@@ -34,6 +34,7 @@ CLASS ltc_function_tests DEFINITION FOR TESTING
     METHODS deleted_wo_param_then_no_dump FOR TESTING RAISING cx_static_check.
     METHODS inserted_wo_param_then_no_dump FOR TESTING RAISING cx_static_check.
     METHODS updated_wo_param_then_no_dump FOR TESTING RAISING cx_static_check.
+    METHODS different_table_types_error FOR TESTING RAISING cx_static_check.
 
 ENDCLASS.
 
@@ -202,6 +203,19 @@ CLASS ltc_function_tests IMPLEMENTATION.
           internal_table_new = scarr_new
           internal_table_old = scarr_old ).
 
+  ENDMETHOD.
+
+  METHOD different_table_types_error.
+
+    TRY.
+      DATA customers TYPE STANDARD TABLE OF scustom.
+      zcl_table_comparison_factory=>create_table_comparison( )->compare(
+        EXPORTING
+          internal_table_new = VALUE t_itab( )
+          internal_table_old = customers ).
+      cl_abap_unit_assert=>fail( 'Error expected' ).
+    CATCH zcx_table_comparison.
+    ENDTRY.
   ENDMETHOD.
 ENDCLASS.
 
