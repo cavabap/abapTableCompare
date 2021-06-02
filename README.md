@@ -3,6 +3,10 @@ Compares two tables and reports which lines are unchanged, inserted, deleted or 
 
 Target Platform ABAP 7.4+
 
+# Installation
+
+Download this project to your SAP Server with ABAPGit.
+
 # Example
 ```
     TYPES t_itab TYPE STANDARD TABLE OF scarr WITH KEY carrid.
