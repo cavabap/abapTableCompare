@@ -100,8 +100,10 @@ CLASS zcl_table_comparison IMPLEMENTATION.
 
 
     DATA(sort_order) = get_sort_order_from_table_keys( table_description_new ).
-    SORT <itab_old_with_change_ind> BY (sort_order).
-    SORT <itab_new_with_change_ind> BY (sort_order).
+    IF sort_order IS NOT INITIAL.
+      SORT <itab_old_with_change_ind> BY (sort_order).
+      SORT <itab_new_with_change_ind> BY (sort_order).
+    ENDIF.
 
 * NOTE: If check_indicator = ' ' then the itab's are condensed meaning
 *       that identical entries are removed from both itab's.
