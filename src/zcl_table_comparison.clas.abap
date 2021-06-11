@@ -24,8 +24,7 @@ CLASS zcl_table_comparison DEFINITION
       IMPORTING
         itab_new_with_change_ind TYPE table
       EXPORTING
-        et_insert                TYPE table
-        et_update                TYPE table.
+        et_insert                TYPE table.
     METHODS get_updated_lines
       IMPORTING
         itab_new_with_change_ind TYPE table

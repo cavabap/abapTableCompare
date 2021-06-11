@@ -149,7 +149,7 @@ CLASS ltc_function_tests IMPLEMENTATION.
     cl_abap_unit_assert=>assert_equals( act = inserts
                                         exp = scarr
                                         msg = `Inserts not as expected` ).
-  ENDMETHOD.
+  ENDMETHOD."#EC CI_VALPAR
 
 
   METHOD changes_should_be.
@@ -157,7 +157,7 @@ CLASS ltc_function_tests IMPLEMENTATION.
     cl_abap_unit_assert=>assert_equals( act = updates
                                         exp = scarr
                                         msg = `Changes not as expected` ).
-  ENDMETHOD.
+  ENDMETHOD."#EC CI_VALPAR
 
 
   METHOD deletes_should_be.
@@ -165,7 +165,7 @@ CLASS ltc_function_tests IMPLEMENTATION.
     cl_abap_unit_assert=>assert_equals( act = deletes
                                         exp = scarr
                                         msg = `Deletes not as expected` ).
-  ENDMETHOD.
+  ENDMETHOD."#EC CI_VALPAR
 
 
   METHOD deleted_wo_param_then_no_dump.
