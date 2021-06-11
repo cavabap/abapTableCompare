@@ -1,5 +1,5 @@
 # abapTableCompare
-Compares two tables and reports which lines are unchanged, inserted, deleted or changed.
+Compares two tables and reports which lines are inserted, deleted or changed.
 
 Target Platform ABAP 7.4+
 
