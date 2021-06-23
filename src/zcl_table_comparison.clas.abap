@@ -30,6 +30,12 @@ CLASS zcl_table_comparison DEFINITION
         itab_new_with_change_ind TYPE table
       EXPORTING
         et_update                TYPE table.
+    METHODS check_table_lines_type_matches
+      IMPORTING
+        i_table              TYPE table
+        i_structure_name_old TYPE string
+      RETURNING
+        VALUE(r_result)      TYPE abap_bool.
 ENDCLASS.
 
 
@@ -135,15 +141,21 @@ CLASS zcl_table_comparison IMPLEMENTATION.
     ENDIF.
 
 *   Fill the output itab's depending on the change indicator
-    IF inserted IS SUPPLIED.
-    get_inserted_lines(
-      EXPORTING
-        itab_new_with_change_ind = <itab_new_with_change_ind>
-      IMPORTING
-        et_insert = inserted ).
+    IF check_table_lines_type_matches(
+      i_table           = inserted
+      i_structure_name_old = structure_name_old ).
+
+      get_inserted_lines(
+        EXPORTING
+          itab_new_with_change_ind = <itab_new_with_change_ind>
+        IMPORTING
+          et_insert = inserted ).
     ENDIF.
 
-    IF updated IS SUPPLIED.
+    IF check_table_lines_type_matches(
+      i_table           = updated
+      i_structure_name_old = structure_name_old ).
+
       get_updated_lines(
         EXPORTING
         itab_new_with_change_ind = <itab_new_with_change_ind>
@@ -151,13 +163,36 @@ CLASS zcl_table_comparison IMPLEMENTATION.
           et_update = updated ).
     ENDIF.
 
-    IF deleted IS SUPPLIED.
+    IF check_table_lines_type_matches(
+      i_table           = deleted
+      i_structure_name_old = structure_name_old ).
+
       get_deleted_lines(
         EXPORTING
           itab_old_with_change_ind = <itab_old_with_change_ind>
         IMPORTING
           deleted_lines = deleted ).
     ENDIF.
+
+  ENDMETHOD.
+
+  METHOD check_table_lines_type_matches.
+
+    DATA:
+      structure_name        TYPE string,
+      table_description     TYPE REF TO cl_abap_tabledescr,
+      structure_description TYPE REF TO cl_abap_structdescr.
+
+    TRY.
+        table_description ?= cl_abap_typedescr=>describe_by_data( i_table ).
+        structure_description ?= table_description->get_table_line_type( ).
+        structure_name = structure_description->get_relative_name( ).
+
+        IF structure_name = i_structure_name_old.
+          r_result = abap_true.
+        ENDIF.
+      CATCH cx_sy_move_cast_error."ABAP 7.4 doesn't allow the use of is instance of
+    ENDTRY.
 
   ENDMETHOD.
 
@@ -228,8 +263,6 @@ CLASS zcl_table_comparison IMPLEMENTATION.
     ENDLOOP.
 
   ENDMETHOD.
-
-
 
   METHOD zif_table_comparison~compare_with_database.
     DATA internal_table_description TYPE REF TO cl_abap_tabledescr.
