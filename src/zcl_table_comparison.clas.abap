@@ -282,7 +282,7 @@ CLASS zcl_table_comparison IMPLEMENTATION.
 
     ASSIGN internal_table_db_ref->* TO <internal_table_db>.
 
-    SELECT * FROM (table_name) INTO TABLE @<internal_table_db>. ##TODO "include an optional where clause?
+    SELECT * FROM (table_name) INTO TABLE @<internal_table_db>.
 
     me->zif_table_comparison~compare(
       EXPORTING
