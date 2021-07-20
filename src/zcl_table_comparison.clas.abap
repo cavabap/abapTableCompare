@@ -40,7 +40,7 @@ ENDCLASS.
 
 
 
-CLASS zcl_table_comparison IMPLEMENTATION.
+CLASS ZCL_TABLE_COMPARISON IMPLEMENTATION.
 
 
   METHOD zif_table_comparison~compare.
@@ -176,6 +176,7 @@ CLASS zcl_table_comparison IMPLEMENTATION.
 
   ENDMETHOD.
 
+
   METHOD check_table_lines_type_matches.
 
     DATA:
@@ -195,6 +196,7 @@ CLASS zcl_table_comparison IMPLEMENTATION.
     ENDTRY.
 
   ENDMETHOD.
+
 
   METHOD get_inserted_lines.
 
@@ -234,6 +236,7 @@ CLASS zcl_table_comparison IMPLEMENTATION.
 
   ENDMETHOD.
 
+
   METHOD get_deleted_lines.
 
     FIELD-SYMBOLS:
@@ -255,6 +258,7 @@ CLASS zcl_table_comparison IMPLEMENTATION.
 
   ENDMETHOD.
 
+
   METHOD get_sort_order_from_table_keys.
 
     DATA(keys) = database_table_description_new->get_keys( ).
@@ -263,6 +267,7 @@ CLASS zcl_table_comparison IMPLEMENTATION.
     ENDLOOP.
 
   ENDMETHOD.
+
 
   METHOD zif_table_comparison~compare_with_database.
     DATA internal_table_description TYPE REF TO cl_abap_tabledescr.
@@ -282,7 +287,7 @@ CLASS zcl_table_comparison IMPLEMENTATION.
 
     ASSIGN internal_table_db_ref->* TO <internal_table_db>.
 
-    SELECT * FROM (table_name) INTO TABLE @<internal_table_db>.
+    SELECT * FROM (table_name) INTO TABLE @<internal_table_db> ORDER BY PRIMARY KEY.
 
     me->zif_table_comparison~compare(
       EXPORTING
@@ -293,5 +298,4 @@ CLASS zcl_table_comparison IMPLEMENTATION.
         updated   = updated
         deleted   = deleted ).
   ENDMETHOD.
-
 ENDCLASS.
