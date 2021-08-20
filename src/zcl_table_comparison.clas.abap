@@ -6,7 +6,6 @@ CLASS zcl_table_comparison DEFINITION
   PUBLIC SECTION.
     INTERFACES: zif_table_comparison.
 
-
   PROTECTED SECTION.
   PRIVATE SECTION.
     CONSTANTS c_change_indicator_column_name TYPE string VALUE 'CHIND' ##NO_TEXT.
@@ -36,6 +35,7 @@ CLASS zcl_table_comparison DEFINITION
         i_structure_name_old TYPE string
       RETURNING
         VALUE(r_result)      TYPE abap_bool.
+
 ENDCLASS.
 
 
